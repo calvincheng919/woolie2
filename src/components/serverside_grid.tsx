@@ -68,28 +68,6 @@ const AGGrid = (): JSX.Element => {
     }
   }
 
-  // async function getPivotFields(request: any){
-  //   try {
-  //     const result = await core40SDK.ok(
-  //       core40SDK.run_inline_query(
-  //         {
-  //           result_format: 'json',
-  //           body: {
-  //             model: '4_mile_analytics',
-  //             view: 'order_items',
-  //             fields: ["inventory_items.department"],
-  //             limit: '500',
-  //             total: false
-  //           }
-  //         }
-  //       )
-  //     ) as unknown as Record<any, any>[]
-  //     const pivotFields: any[] = result.map( (item: any) => Object.values(item)[0]);
-  //     return pivotFields;
-  //   }catch (error) {
-  //     console.log('Error invoking inline query', error)
-  //   }
-  // }
 
   function formatResult(request:any, raw: any): any[] {
 
@@ -169,7 +147,6 @@ const AGGrid = (): JSX.Element => {
       // response.pivotFields = await getPivotFields(params.request)
       // console.log('looker data: ', response)
       addPivotColDefs(response, params.columnApi);
-      console.log('Looker resp: ',response)
         if (response?.success) {
           // call the success callback
           console.log('response success')
@@ -228,16 +205,18 @@ const AGGrid = (): JSX.Element => {
     const rowGroupCols = request.rowGroupCols;
     const groupKeys = request.groupKeys;
     const valueCols = request.valueCols;
+    const pivotCols = request.pivotCols;
 
     if (groupKeys.length > 0) {
       const dims = [];
       for (let i=0; i <= groupKeys.length; i++) {
-        dims.push(`inventory_items.${rowGroupCols[i].id}`)
+        dims.push(`${PREFIX}.${rowGroupCols[i].id}`)
       }
       console.log('dim fields: ', dims)
-      const measures = valueCols.map( (item: any) => `inventory_items.${item.id}`); 
-      console.log('fields', [...dims, ...measures]) 
-      return [...dims, ...measures];
+      const measures = valueCols.map( (item: any) => `${PREFIX}.${item.id}`); 
+      const pivots = pivotCols.map( (item: any) => `${PREFIX}.${item.id}`);
+      console.log('fields', [...dims, ...pivots,...measures]) 
+      return [...dims,...pivots, ...measures];
     } 
     // TODO: These default columns can be passed down as props from a picklist of some kind
     return [ 'inventory_items.department','inventory_items.category', 'inventory_items.count_products']

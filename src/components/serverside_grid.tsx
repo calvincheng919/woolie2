@@ -18,11 +18,11 @@ const AGGrid = (): JSX.Element => {
   const gridStyle = useMemo(() => ({ height: '100%', width: '100%' }), []);
   const core40SDK = getCoreSDK2<Looker40SDK>()
   const [columnDefs, setColumnDefs] = useState([
+    // { field: "created_at_year", minWidth: 220, pivot: true},
     { field: "department", minWidth: 220, pivot: true},
-    { field: "category", minWidth: 220,rowGroup: true, hide: true },
-    { field: "brand", minWidth: 220,rowGroup: true, hide: true },
+    { field: "category", minWidth: 220,rowGroup: true },
+    { field: "brand", minWidth: 220,rowGroup: true},
     // { field: "name", minWidth: 220,rowGroup: true, hide: true },
-    // { field: "created_at_year", minWidth: 220,rowGroup: true, hide: true},
     // { field: "created_at_month", minWidth: 220,rowGroup: true, hide: true},
     // { field: "created_at_day_of_week", minWidth: 220,rowGroup: true, hide: true},
     { field: "count_products" , minWidth: 220, aggFunc: 'sum', filter: true},
@@ -30,7 +30,6 @@ const AGGrid = (): JSX.Element => {
     { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum'},
   ]);
 
-  const PREFIX = 'inventory_items'
   const VIEW = 'order_items'
   const MODEL = '4_mile_analytics'
 
@@ -58,7 +57,7 @@ const AGGrid = (): JSX.Element => {
       const result = await core40SDK.ok(
         core40SDK.run_inline_query(lookerRequest)
       ) as unknown as Record<any, any>[]
-      console.log(result)
+      console.log('raw looker result: ',result)
       const formattedResult = formatResult(request,result)
       console.log('formatted result: ', formattedResult)
 
@@ -88,8 +87,9 @@ const AGGrid = (): JSX.Element => {
       })
     }
     console.log('formatted data: ', data)
-    // const pivotFields = raw.pivots? Object.keys(data[0]).map( key => key): [];
-    const pivotFields = ['Men_count_products', 'Women_count_products']
+    const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i > 0): [];
+    console.log('pivot fields ',pivotFields)
+    // const pivotFields = ['Men_count_products', 'Women_count_products']
     formatted = {
       success: true,
       rows: data,
@@ -183,7 +183,10 @@ const AGGrid = (): JSX.Element => {
 
   function buildLookerQuery(request: any) {
     
-    const pivots = request.pivotCols.map( (item: any) => `${PREFIX}.${item.id}`);
+    const pivots = request.pivotCols.map( (item: any) => {
+      const prefix = item.id.includes('created')? 'order_items': 'inventory_items';
+      return `${prefix}.${item.id}`
+    });
     const result_format = pivots.length > 0? 'json_detail': 'json';
     const query = {
       result_format,
@@ -207,14 +210,18 @@ const AGGrid = (): JSX.Element => {
     const valueCols = request.valueCols;
     const pivotCols = request.pivotCols;
 
-    if (groupKeys.length > 0) {
+    if (groupKeys.length > 0 || pivotCols.length > 0) {
       const dims = [];
       for (let i=0; i <= groupKeys.length; i++) {
-        dims.push(`${PREFIX}.${rowGroupCols[i].id}`)
+        const prefix = groupKeys.includes('created')? 'order_items': 'inventory_items'
+        dims.push(`${prefix}.${rowGroupCols[i].id}`)
       }
       console.log('dim fields: ', dims)
-      const measures = valueCols.map( (item: any) => `${PREFIX}.${item.id}`); 
-      const pivots = pivotCols.map( (item: any) => `${PREFIX}.${item.id}`);
+      const measures = valueCols.map( (item: any) => `${'inventory_items'}.${item.id}`); 
+      const pivots = pivotCols.map( (item: any) => {
+        const prefix = item.id.includes('created')? 'order_items': 'inventory_items';
+        return `${prefix}.${item.id}`
+      });
       console.log('fields', [...dims, ...pivots,...measures]) 
       return [...dims,...pivots, ...measures];
     } 

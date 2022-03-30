@@ -25,9 +25,9 @@ const AGGrid = (): JSX.Element => {
     // { field: "name", minWidth: 220,rowGroup: true, hide: true },
     // { field: "created_at_month", minWidth: 220,rowGroup: true, hide: true},
     // { field: "created_at_day_of_week", minWidth: 220,rowGroup: true, hide: true},
-    { field: "count_products" , minWidth: 220, aggFunc: 'sum', filter: true},
-    { field: "total_retail_price" , minWidth: 220, hide: true, aggFunc: 'sum'},
-    { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum'},
+    { headerName: 'Count', field: "count-products" , minWidth: 220, aggFunc: 'sum', filter: true,valueFormatter: formatNumber},
+    { headerName: 'Total Retail Price', field: "total-retail-price" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
+    // { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
   ]);
 
   const VIEW = 'order_items'
@@ -48,8 +48,15 @@ const AGGrid = (): JSX.Element => {
     };
   }, []);
 
-  const getLookerData = async (request: any) => {
+  // Following formatNumber function doesn't actually do anything being passed into the grid.
+  // Only works on client side rendered grids
+   
+  function formatNumber(number: any){
+    // parseInt(strNumber)
+    return `$${parseFloat(number.value).toFixed(2)}`
+  }
 
+  const getLookerData = async (request: any) => {
     const lookerRequest = buildLookerQuery(request) 
     console.log('looker request: ',lookerRequest)
     try {
@@ -89,7 +96,6 @@ const AGGrid = (): JSX.Element => {
     console.log('formatted data: ', data)
     const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i > 0): [];
     console.log('pivot fields ',pivotFields)
-    // const pivotFields = ['Men_count_products', 'Women_count_products']
     formatted = {
       success: true,
       rows: data,
@@ -115,7 +121,7 @@ const AGGrid = (): JSX.Element => {
           let metricsObj: object = {...Object.values(item)[i]}
           let metrics = Object.keys(metricsObj).map( (metric,i) => {
             metric = metric.split('|FIELD|').join('_')
-            field = field.substring(field.indexOf('.')+1)
+            field = field.substring(field.indexOf('.')+1).replace(/_/g, '-')
             return {
               [`${metric}_${field}`]: Object.values(metricsObj)[i].value
             }
@@ -146,7 +152,7 @@ const AGGrid = (): JSX.Element => {
       const response:any = await getLookerData(params.request)
       // response.pivotFields = await getPivotFields(params.request)
       // console.log('looker data: ', response)
-      addPivotColDefs(response, params.columnApi);
+      addPivotColDefs(params.request,response, params.columnApi);
         if (response?.success) {
           // call the success callback
           console.log('response success')
@@ -164,20 +170,64 @@ const AGGrid = (): JSX.Element => {
 
   //** Pivoting */
 
-  const addPivotColDefs = (response: IinlineQueryResult, columnApi: any) => {
+  const addPivotColDefs = (request: any, response: IinlineQueryResult, columnApi: any) => {
     // check if pivot colDefs already exist
     let existingPivotColDefs = columnApi.getSecondaryColumns();
     if (existingPivotColDefs && existingPivotColDefs.length > 0) {
       return;
     }
     // create colDefs
-    let pivotColDefs = response.pivotFields?.map(function (field: any) {
-      // let headerName = field.split('_')[0];
-      return { headerName: field, field: field };
-    });
+
+    // let pivotColDefs = response.pivotFields?.map(function (field: any) {
+    //   // let headerName = field.split('_')[0];
+    //   return { headerName: field, field: field };
+    // });
+    let pivotColDefs = createPivotColDefs(request, response.pivotFields)
     // supply secondary columns to the grid
     columnApi.setSecondaryColumns(pivotColDefs);
   }; 
+
+  // create column groupings based on the returned data
+  const createPivotColDefs = (request: any, pivotFields: any) => {
+    function addColDef(colId:string, parts: string[], res: any[]) {
+      if (parts.length === 0) return [];
+      var first = parts.shift();
+      var existing = res.filter(function (r) {
+        return 'groupId' in r && r.groupId === first;
+      })[0];
+      if (existing) {
+        existing['children'] = addColDef(colId, parts, existing.children);
+      } else {
+        var colDef:any = {};
+        var isGroup = parts.length > 0;
+        if (isGroup) {
+          colDef['groupId'] = first;
+          colDef['headerName'] = first;
+        } else {
+          // debugger;
+          var valueCol = request.valueCols.filter(function (r:any) {
+            return r.field === first;
+          })[0];
+          colDef['colId'] = colId;
+          colDef['headerName'] = valueCol.displayName;
+          colDef['field'] = colId;
+        }
+        var children = addColDef(colId, parts, []);
+        children.length > 0 ? (colDef['children'] = children) : null;
+        res.push(colDef);
+      }
+      return res;
+    }
+    if (request.pivotMode && request.pivotCols.length > 0) {
+      var secondaryCols: any = [];
+      // debugger;
+      pivotFields.forEach(function (field: string) {
+        addColDef(field, field.split('_'), secondaryCols);
+      });
+      return secondaryCols;
+    }
+    return [];
+  };
 
   //** Looker Queries */
 
@@ -217,7 +267,7 @@ const AGGrid = (): JSX.Element => {
         dims.push(`${prefix}.${rowGroupCols[i].id}`)
       }
       console.log('dim fields: ', dims)
-      const measures = valueCols.map( (item: any) => `${'inventory_items'}.${item.id}`); 
+      const measures = valueCols.map( (item: any) => `${'inventory_items'}.${item.id.replace(/-/g,'_')}`); 
       const pivots = pivotCols.map( (item: any) => {
         const prefix = item.id.includes('created')? 'order_items': 'inventory_items';
         return `${prefix}.${item.id}`

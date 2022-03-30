@@ -102,6 +102,13 @@ const AGGrid = (): JSX.Element => {
       lastRow: getLastRowIndex(request, raw),
       pivotFields 
     }
+    formatted.rows.forEach( (record:any) => {
+      record['Men_total-retail-price']=record['Men_total-retail-price']? `$${parseFloat(record['Men_total-retail-price']).toFixed(2)}`: '$0'
+      record['Women_total-retail-price']=record['Women_total-retail-price']?`$${parseFloat(record['Women_total-retail-price']).toFixed(2)}`: '$0'
+      record['Women_count-products']=record['Women_count-products']? record['Women_count-products']: '0'
+      record['Men_count-products']=record['Men_count-products']? record['Men_count-products']: '0'
+    })
+
     return formatted
   }
 

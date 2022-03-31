@@ -19,14 +19,14 @@ const AGGrid = (): JSX.Element => {
   const core40SDK = getCoreSDK2<Looker40SDK>()
   const [columnDefs, setColumnDefs] = useState([
     // { field: "created_at_year", minWidth: 220, pivot: true},
-    { field: "department", minWidth: 220, pivot: true},
-    { field: "category", minWidth: 220,rowGroup: true },
+    { field: "department", minWidth: 220, pivot: true, enableRowGroup: true, enablePivot: true},
+    { field: "category", minWidth: 220,rowGroup: true, enablePivot: true},
     { field: "brand", minWidth: 220,rowGroup: true},
-    // { field: "name", minWidth: 220,rowGroup: true, hide: true },
+    { field: "name", minWidth: 220,rowGroup: true, hide: true },
     // { field: "created_at_month", minWidth: 220,rowGroup: true, hide: true},
     // { field: "created_at_day_of_week", minWidth: 220,rowGroup: true, hide: true},
-    { headerName: 'Count', field: "count-products" , minWidth: 220, aggFunc: 'sum', filter: true,valueFormatter: formatNumber},
-    { headerName: 'Total Retail Price', field: "total-retail-price" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
+    { headerName: 'Count', enableValue: true,field: "count-products" , minWidth: 220, aggFunc: 'sum', filter: true,valueFormatter: formatNumber},
+    { headerName: 'Total Retail Price', enableValue: true,field: "total-retail-price" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
     // { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
   ]);
 
@@ -191,6 +191,7 @@ const AGGrid = (): JSX.Element => {
     // });
     let pivotColDefs = createPivotColDefs(request, response.pivotFields)
     // supply secondary columns to the grid
+    console.log('pivot col defs ', pivotColDefs)
     columnApi.setSecondaryColumns(pivotColDefs);
   }; 
 
@@ -210,6 +211,8 @@ const AGGrid = (): JSX.Element => {
         if (isGroup) {
           colDef['groupId'] = first;
           colDef['headerName'] = first;
+          colDef['columnGroupShow'] = 'closed'
+          colDef['aggFunc'] = 'sum'
         } else {
           // debugger;
           var valueCol = request.valueCols.filter(function (r:any) {
@@ -333,6 +336,7 @@ const AGGrid = (): JSX.Element => {
           autoGroupColumnDef={autoGroupColumnDef}
           animateRows={true}
           pivotMode={true}
+          // sideBar={true}
         ></AgGridReact>
       </div>
     </div>

@@ -160,17 +160,18 @@ const AGGrid = (): JSX.Element => {
       // response.pivotFields = await getPivotFields(params.request)
       // console.log('looker data: ', response)
       addPivotColDefs(params.request,response, params.columnApi);
-        if (response?.success) {
-          // call the success callback
-          console.log('response success')
-          params.success({
-            rowData: response.rows,
-            rowCount: response.lastRow,
-          });
-        } else {
-          // inform the grid request failed
-          params.fail();
-        }
+      
+      if (response?.success) {
+        // call the success callback
+        console.log('response success')
+        params.success({
+          rowData: response.rows,
+          rowCount: response.lastRow,
+        });
+      } else {
+        // inform the grid request failed
+        params.fail();
+      }
     },
   };  
 

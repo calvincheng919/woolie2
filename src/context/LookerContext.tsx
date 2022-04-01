@@ -18,7 +18,8 @@ function LookerData(props: any) {
   const [lookerData, setLookerData] = useState(null);
 
   const state = {
-    data: null
+    lookerData,
+    getLookerData: setLookerData
   };
 
   return (

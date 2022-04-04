@@ -23,9 +23,12 @@ import { hot } from 'react-hot-loader/root'
 import { HelloWorld } from './HelloWorld'
 import { Looker40SDK } from '@looker/sdk'
 import AGGrid from './components/serverside_grid'
+import LookerData from './context/LookerContext'
 
 export const App = hot(() => (
   <ExtensionProvider2 type={Looker40SDK}>
-    <AGGrid />
+    <LookerData>
+      <AGGrid />
+    </LookerData>
   </ExtensionProvider2>
 ))

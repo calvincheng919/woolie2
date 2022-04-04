@@ -5,6 +5,7 @@ import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 import { getCoreSDK2 } from '@looker/extension-sdk-react'
 import { Looker40SDK } from '@looker/sdk'
+import { LookerDataContext } from '../context/LookerContext';
 
 interface IinlineQueryResult {
   success?: boolean;
@@ -14,6 +15,8 @@ interface IinlineQueryResult {
 }
 
 const AGGrid = (): JSX.Element => {
+
+  const context = useContext(LookerDataContext);
   const containerStyle = useMemo(() => ({ width: '100%', height: '100%' }), []);
   const gridStyle = useMemo(() => ({ height: '100%', width: '100%' }), []);
   const core40SDK = getCoreSDK2<Looker40SDK>()
@@ -160,7 +163,7 @@ const AGGrid = (): JSX.Element => {
       // response.pivotFields = await getPivotFields(params.request)
       // console.log('looker data: ', response)
       addPivotColDefs(params.request,response, params.columnApi);
-      
+
       if (response?.success) {
         // call the success callback
         console.log('response success')
@@ -174,7 +177,6 @@ const AGGrid = (): JSX.Element => {
       }
     },
   };  
-
 
   //** Pivoting */
 

@@ -1,8 +1,4 @@
 import React, { useContext, useEffect, useState, useMemo, useCallback } from 'react'
-import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-enterprise';
-import 'ag-grid-community/dist/styles/ag-grid.css';
-import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 import { getCoreSDK2 } from '@looker/extension-sdk-react'
 import { Looker40SDK } from '@looker/sdk'
 
@@ -26,7 +22,7 @@ interface IinlineQueryResult {
 function LookerData(props: any) {
 
   useEffect( ()=> {
-    getLookerData(props.request);
+    // getLookerData(props.request);
   }, []);
 
   const [lookerData, setLookerData] = useState<any>(null);
@@ -75,6 +71,7 @@ function LookerData(props: any) {
       lastRow: getLastRowIndex(request, raw),
       pivotFields 
     }
+    // TODO: hardcoded formatting... find a better solution
     formatted.rows.forEach( (record:any) => {
       record['Men_total-retail-price']=record['Men_total-retail-price']? `$${parseFloat(record['Men_total-retail-price']).toFixed(2)}`: '$0'
       record['Women_total-retail-price']=record['Women_total-retail-price']?`$${parseFloat(record['Women_total-retail-price']).toFixed(2)}`: '$0'
@@ -125,7 +122,7 @@ function LookerData(props: any) {
     })
     return final;
   }
-  
+
   function getLastRowIndex(request:any, results:any) {
     if (!results || results.length === 0) {
       return null;

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { AgGridReact } from 'ag-grid-react';
 import 'ag-grid-enterprise';
 import 'ag-grid-community/dist/styles/ag-grid.css';
@@ -26,9 +26,9 @@ const AGGrid = (): JSX.Element => {
     // { field: "name", minWidth: 220,rowGroup: true, hide: true },
     // { field: "created_at_month", minWidth: 220,rowGroup: true, hide: true},
     // { field: "created_at_day_of_week", minWidth: 220,rowGroup: true, hide: true},
-    { headerName: 'Count', field: "count-products" , minWidth: 220, aggFunc: 'sum', filter: true,valueFormatter: formatNumber},
-    { headerName: 'Total Retail Price', field: "total-retail-price" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
-    // { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum', valueFormatter: formatNumber},
+    { headerName: 'Count', field: "count-products" , minWidth: 220, aggFunc: 'sum', filter: true},
+    { headerName: 'Total Retail Price', field: "total-retail-price" , minWidth: 220, hide: true, aggFunc: 'sum'},
+    // { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum'},
   ]);
 
   const defaultColDef = useMemo(() => {

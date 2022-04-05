@@ -33,9 +33,6 @@ const AGGrid = (): JSX.Element => {
     // { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum'},
   ]);
 
-  // const VIEW = 'order_items'
-  // const MODEL = '4_mile_analytics'
-
   const defaultColDef = useMemo(() => {
     return {
       flex: 1,
@@ -51,15 +48,14 @@ const AGGrid = (): JSX.Element => {
     };
   }, []);
 
-  // Following formatNumber function doesn't actually do anything being passed into the grid.
-  // Only works on client side rendered grids
-
   const datasource = {
-    getRows: function(params:any) {
+    getRows: async function(params:any) {
       console.log('[Datasource] - rows requested by grid: ', params.request);
-      const response:any = context?.getLookerData(params.request)
+      // debugger;
+      await context?.getLookerData(params.request)
       // const response:any = await getLookerData(params.request) - before context implementation
-      console.log('looker data: ', response)
+      const response = await context?.lookerData;
+      console.log('looker data: ', context?.lookerData)
       addPivotColDefs(params.request,response, params.columnApi);
 
       if (response.success) {
@@ -84,12 +80,7 @@ const AGGrid = (): JSX.Element => {
     if (existingPivotColDefs && existingPivotColDefs.length > 0) {
       return;
     }
-    // create colDefs
 
-    // let pivotColDefs = response.pivotFields?.map(function (field: any) {
-    //   // let headerName = field.split('_')[0];
-    //   return { headerName: field, field: field };
-    // });
     let pivotColDefs = createPivotColDefs(request, response.pivotFields)
     // supply secondary columns to the grid
     console.log('pivot col defs ', pivotColDefs)
@@ -143,13 +134,15 @@ const AGGrid = (): JSX.Element => {
   const onGridReady = useCallback( (params: any) => {
     console.log('grid ready called')
     // inlineQueryClick();
-    console.log('params top: ', params)
+    // console.log('params top: ', params)
     params.api.setServerSideDatasource(datasource);
+    // console.log('on grid ready', context?.lookerData)
   }, [])
 
   return (
     <div style={containerStyle}>
       <div style={gridStyle} className="ag-theme-alpine">
+        
         <AgGridReact
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}

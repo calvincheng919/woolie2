@@ -25,9 +25,25 @@ import { Looker40SDK } from '@looker/sdk'
 import AGGrid from './components/serverside_grid'
 import LookerData from './context/LookerContext'
 
+const initialParams = {
+  groupKeys: [],
+  pivotCols: [{id: 'department', aggFunc: undefined, displayName: 'Department', field: 'department'}],
+  pivotMode: true,
+  rowGroupCols: [
+    {id: 'category', aggFunc: undefined, displayName: 'Category', field: 'category'},
+    {id: 'brand', aggFunc: undefined, displayName: 'Brand', field: 'brand'},
+    {id: 'name', aggFunc: undefined, displayName: 'Name', field: 'name'},
+  ],
+  valueCols: [
+    {id: 'count-products', aggFunc: 'sum', displayName: 'Count', field: 'count-products'},
+    {id: 'total-retail-price', aggFunc: 'sum', displayName: 'Total Retail Price', field: 'total-retail-price'},
+  ]
+}
+
+
 export const App = hot(() => (
   <ExtensionProvider2 type={Looker40SDK}>
-    <LookerData>
+    <LookerData initialParams={initialParams} >
       <AGGrid />
     </LookerData>
   </ExtensionProvider2>

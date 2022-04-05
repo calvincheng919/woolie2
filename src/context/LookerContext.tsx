@@ -3,9 +3,6 @@ import { getCoreSDK2 } from '@looker/extension-sdk-react'
 import { Looker40SDK } from '@looker/sdk'
 
 export const LookerDataContext = React.createContext<AppContextInterface | null>(null);
-const core40SDK = getCoreSDK2<Looker40SDK>()
-const VIEW = 'order_items'
-const MODEL = '4_mile_analytics'
 
 interface AppContextInterface {
   lookerData: any;
@@ -20,14 +17,47 @@ interface IinlineQueryResult {
 }
 
 function LookerData(props: any) {
+  const core40SDK = getCoreSDK2<Looker40SDK>()
+  const VIEW = 'order_items'
+  const MODEL = '4_mile_analytics'
+  
+  const initRequest = buildLookerQuery(props.initialParams);
+  
+  const [lookerData, setLookerData] = useState<any>(
+    // getLookerData
+    // console.log('set inital state')
+    core40SDK.ok(
+      core40SDK.run_inline_query(initRequest)
+    ).then( (result: unknown) => {
+      const formattedResult = formatResult(props.initialParams, result)
+      return formattedResult
+    })
+    .catch( (error) => {
+      console.log('error invoking inline query')
+    })
+  );
 
   useEffect( ()=> {
-    // getLookerData(props.request);
+    // console.log('initial params', props.initialParams)
+    // getLookerData(props.initialParams)
+    // console.log('use effect')
+    // const lookerRequest = buildLookerQuery(props.initialParams);
+    // core40SDK.ok(
+    //   core40SDK.run_inline_query(lookerRequest)
+    // ).then( (result: unknown) => {
+
+    //   const formattedResult = formatResult(props.initialParams, result)
+    //   setLookerData(formattedResult)
+    //   console.log('formatted result from useEffect',formattedResult)
+    //   console.log('context data from useEffect', lookerData)
+    // })
+    // .catch( (error) => {
+    //   console.log('error invoking inline query')
+    // })
+    
   }, []);
 
-  const [lookerData, setLookerData] = useState<any>(null);
-
-  const getLookerData = async (request: any) => {
+  async function getLookerData(request: any = props.initialParams){
     const lookerRequest = buildLookerQuery(request) 
     console.log('looker request: ',lookerRequest)
     try {
@@ -39,6 +69,7 @@ function LookerData(props: any) {
       const formattedResult = formatResult(request,result)
       console.log('formatted result: ', formattedResult)
       setLookerData(formattedResult);
+      // console.log('inside context:, ',lookerData)
     } catch (error) {
       console.log('Error invoking inline query', error)
     }

@@ -1,3 +1,5 @@
+import { isInteger } from "lodash"
+
 const VIEW = 'order_items'
 const MODEL = '4_mile_analytics'
 
@@ -25,6 +27,7 @@ function formatResult(request:any, raw: any): any[] {
 let formatted:any;
 let data;
 // debugger;
+console.log('raw',raw)
 if ( raw.pivots?.length > 0) {
   // interpret looker pivot data to ag grid pivot format
   data = dataTransform(raw)
@@ -39,7 +42,7 @@ if ( raw.pivots?.length > 0) {
   })
 }
 console.log('formatted data: ', data)
-const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i > 0): [];
+const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i >= raw.fields.dimensions.length): [];
 console.log('pivot fields ',pivotFields)
 formatted = {
   success: true,
@@ -48,10 +51,16 @@ formatted = {
   pivotFields 
 }
 formatted.rows.forEach( (record:any) => {
-  record['Men_total-retail-price']=record['Men_total-retail-price']? `$${parseFloat(record['Men_total-retail-price']).toFixed(2)}`: '$0'
-  record['Women_total-retail-price']=record['Women_total-retail-price']?`$${parseFloat(record['Women_total-retail-price']).toFixed(2)}`: '$0'
-  record['Women_count-products']=record['Women_count-products']? record['Women_count-products']: '0'
-  record['Men_count-products']=record['Men_count-products']? record['Men_count-products']: '0'
+  
+  pivotFields.forEach(field => {
+    if (record[field] != null  && isInteger(record[field])) {
+      record[field] = record[field].toLocaleString("en-US")
+    } else if ( record[field] && !isInteger(record[field]) ) {
+      record[field] = `${parseFloat(record[field]).toLocaleString("en-US", {style:"currency", currency:"USD"})}`
+    } else {
+      record[field] = '0'
+    }
+  })
 })
 
 return formatted

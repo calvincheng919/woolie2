@@ -9,7 +9,7 @@ import { getLookerData } from '../services/looker';
 
 interface IinlineQueryResult {
   success?: boolean;
-  rows?:any;
+  rows?: any;
   lastRow?: number;
   pivotFields?: any;
 }
@@ -28,7 +28,7 @@ const AGGrid = (): JSX.Element => {
     // { field: "created_at_day_of_week", minWidth: 220,rowGroup: true, hide: true},
     { headerName: 'Count', field: "count-products" , minWidth: 220, aggFunc: 'sum', filter: true},
     { headerName: 'Total Retail Price', field: "total-retail-price" , minWidth: 220, hide: true, aggFunc: 'sum'},
-    // { field: "total_cost" , minWidth: 220, hide: true, aggFunc: 'sum'},
+    { headerName: 'Total Cost', field: "total-cost" , minWidth: 220, hide: true, aggFunc: 'sum'},
   ]);
 
   const defaultColDef = useMemo(() => {
@@ -45,34 +45,23 @@ const AGGrid = (): JSX.Element => {
       minWidth: 200,
     };
   }, []);
-   
-  function formatNumber(number: any){
-    // parseInt(strNumber)
-    return `$${parseFloat(number.value).toFixed(2)}`
-  }
- 
+
   const datasource = {
-    getRows: async function(params:any) {
-      console.log('[Datasource] - rows requested by grid: ', params.request);
-      const response:any = await getLookerData(params.request, core40SDK)
-      // response.pivotFields = await getPivotFields(params.request)
-      // console.log('looker data: ', response)
+    getRows: async function(params: any) {
+      const response: any = await getLookerData(params.request, core40SDK)
       addPivotColDefs(params.request,response, params.columnApi);
         if (response?.success) {
-          // call the success callback
-          console.log('response success')
           params.success({
             rowData: response.rows,
             rowCount: response.lastRow,
           });
         } else {
-          // inform the grid request failed
           params.fail();
         }
     },
   };  
 
-  //** Pivoting */
+  //** Construct Pivot Columns */
 
   const addPivotColDefs = (request: any, response: IinlineQueryResult, columnApi: any) => {
     // check if pivot colDefs already exist
@@ -84,7 +73,6 @@ const AGGrid = (): JSX.Element => {
     columnApi.setSecondaryColumns(pivotColDefs);
   }; 
 
-  // create column groupings based on the returned data
   const createPivotColDefs = (request: any, pivotFields: any) => {
     function addColDef(colId:string, parts: string[], res: any[]) {
       if (parts.length === 0) return [];
@@ -117,7 +105,6 @@ const AGGrid = (): JSX.Element => {
     }
     if (request.pivotMode && request.pivotCols.length > 0) {
       var secondaryCols: any = [];
-      // debugger;
       pivotFields.forEach(function (field: string) {
         addColDef(field, field.split('_'), secondaryCols);
       });
@@ -127,9 +114,6 @@ const AGGrid = (): JSX.Element => {
   };
 
   const onGridReady = useCallback( (params: any) => {
-    console.log('grid ready called')
-    // inlineQueryClick();
-    console.log('params top: ', params)
     params.api.setServerSideDatasource(datasource);
   }, [])
 

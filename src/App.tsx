@@ -20,7 +20,6 @@
 import React from 'react'
 import { ExtensionProvider2 } from '@looker/extension-sdk-react'
 import { hot } from 'react-hot-loader/root'
-import { HelloWorld } from './HelloWorld'
 import { Looker40SDK } from '@looker/sdk'
 import AGGrid from './components/serverside_grid'
 

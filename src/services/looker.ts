@@ -4,21 +4,33 @@ const VIEW = 'order_items'
 const MODEL = '4_mile_analytics'
 
 export const getLookerData = async (request: any, core40SDK:any) => {
-const lookerRequest = buildLookerQuery(request) 
-console.log('looker request: ',lookerRequest)
-try {
-  // debugger;
-  const result = await core40SDK.ok(
-    core40SDK.run_inline_query(lookerRequest)
-  ) as unknown as Record<any, any>[]
-  console.log('raw looker result: ',result)
-  const formattedResult = formatResult(request,result)
-  console.log('formatted result: ', formattedResult)
-
-  return formattedResult;
-} catch (error) {
-  console.log('Error invoking inline query', error)
+    const lookerRequest = buildLookerQuery(request) 
+    console.log('looker request: ',lookerRequest)
+    try {
+      // debugger;
+      const result = await core40SDK.ok(
+        core40SDK.run_inline_query(lookerRequest)
+      ) as unknown as Record<any, any>[]
+      console.log('raw looker result: ',result)
+      const formattedResult = formatResult(request,result)
+      console.log('formatted result: ', formattedResult)
+      return formattedResult;
+    } catch (error) {
+      console.log('Error invoking inline query', error)
+    }
 }
+
+export const getModels = async (core40SDK: any) => {
+  console.log('in get model')
+  try {
+    const result = await core40SDK.ok(
+      core40SDK.all_lookml_models({fields:['name', 'has_content', 'explores']})
+    ) as unknown as Record<any, any>[]
+    const list = result.filter( (record: any) => record.has_content && record.explores.length > 0)
+    console.log(list.map( (item:any) => item.name))
+  } catch (error) {
+    console.log('Error getting models', error)
+  }
 }
 
 

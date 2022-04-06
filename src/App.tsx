@@ -22,9 +22,11 @@ import { ExtensionProvider2 } from '@looker/extension-sdk-react'
 import { hot } from 'react-hot-loader/root'
 import { Looker40SDK } from '@looker/sdk'
 import AGGrid from './components/serverside_grid'
+import Pivotcreator from './components/pivot_create'
 
 export const App = hot(() => (
   <ExtensionProvider2 type={Looker40SDK}>
+    <Pivotcreator />
     <AGGrid />
   </ExtensionProvider2>
 ))

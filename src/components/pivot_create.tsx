@@ -1,31 +1,48 @@
-import React from "react";
-import { getCoreSDK, getCoreSDK2 } from '@looker/extension-sdk-react';
-import { Looker40SDK, Looker31SDK} from '@looker/sdk';
+import React, { useState, useEffect } from "react";
+import { getCoreSDK2 } from '@looker/extension-sdk-react';
+import { Looker40SDK} from '@looker/sdk';
 import Select from "react-select";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import Input from "@material-ui/core/Input";
 import InputLabel from "@material-ui/core/InputLabel";
 import Button from "@material-ui/core/Button";
-import {getModels} from '../services/looker';
+import {getModels, getViews} from '../services/looker';
 
 interface IFormInput {
   firstName: string;
   lastName: string;
-  iceCreamType: {label: string; value: string };
+  models: {label: string; value: string };
+  views: {label: string; value: string};
+  dimensions: {label: string; value: string };
 }
 
 const Pivotcreator = () => {
   const core40SDK = getCoreSDK2<Looker40SDK>()
   const { control, handleSubmit } = useForm<IFormInput>();
+  const [models, setModels] = useState<any | null>(null)
+  const [views, setViews] = useState<any | null>(null)
+
+  useEffect( () => {
+    getModels(core40SDK) 
+      .then( (options:any) => {
+        setModels(options)
+        }
+      )
+      .catch((error)=> {
+        console.log(error)
+      })
+  }, [])
 
   const onSubmit: SubmitHandler<IFormInput> = data => {
     console.log(data)
-    getdata(core40SDK);
+    // getdata(core40SDK);
   };
+  const handleChange = ( async (data:any) => {
+    console.log(data.value)
+    const viewOptions = await getViews(core40SDK, data.value)
+    setViews(viewOptions);
+  })
 
-  async function getdata(sdk:any) {
-    await getModels(sdk);
-  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
@@ -44,15 +61,12 @@ const Pivotcreator = () => {
       </InputLabel>
       <br />
       <Controller
-        name="iceCreamType"
+        name="models"
         control={control}
         render={({ field }) => <Select 
-          {...field} 
-          options={[
-            { value: "chocolate", label: "Chocolate" },
-            { value: "strawberry", label: "Strawberry" },
-            { value: "vanilla", label: "Vanilla" }
-          ]} 
+          {...field}
+          onChange={handleChange} 
+          options={models} 
         />}
       />
       <br /><br />
@@ -61,15 +75,11 @@ const Pivotcreator = () => {
       </InputLabel>
       <br />
       <Controller
-        name="iceCreamType"
+        name="dimensions"
         control={control}
         render={({ field }) => <Select 
           {...field} 
-          options={[
-            { value: "chocolate", label: "Chocolate" },
-            { value: "strawberry", label: "Strawberry" },
-            { value: "vanilla", label: "Vanilla" }
-          ]} 
+          options={views} 
         />}
       />
       <br /><br />

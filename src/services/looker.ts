@@ -24,15 +24,33 @@ export const getModels = async (core40SDK: any) => {
   console.log('in get model')
   try {
     const result = await core40SDK.ok(
-      core40SDK.all_lookml_models({fields:['name', 'has_content', 'explores']})
+      core40SDK.all_lookml_models({fields:['name', 'has_content', 'explores', 'label']})
     ) as unknown as Record<any, any>[]
     const list = result.filter( (record: any) => record.has_content && record.explores.length > 0)
-    console.log(list.map( (item:any) => item.name))
+    console.log(list)
+    return list.map( (item:any) => {
+      return {value: item.name, label: item.label}
+    })
   } catch (error) {
     console.log('Error getting models', error)
   }
 }
-
+export const getViews = async (core40SDK: any, model: any) => {
+  console.log('in get views')
+  try {
+    const result = await core40SDK.ok(
+      core40SDK.ok(core40SDK.lookml_model(model, 'explores'))
+    ) as unknown as any
+    console.log(result)
+    // const explores = result.explores.map( (explore: any) => explore.name) 
+    // console.log(explores)
+    // return explores.map( (item:any) => {
+    //   return {value: item, label: item}
+    // })
+  } catch (error) {
+    console.log('Error getting models', error)
+  }
+}
 
 function formatResult(request:any, raw: any): any[] {
 

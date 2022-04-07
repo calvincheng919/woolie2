@@ -17,73 +17,83 @@ interface IFormInput {
 }
 
 const Pivotcreator = () => {
-  const core40SDK = getCoreSDK2<Looker40SDK>()
+  const core40SDK = getCoreSDK2<Looker40SDK>();
   const { control, handleSubmit } = useForm<IFormInput>();
-  const [models, setModels] = useState<any | null>(null)
-  const [views, setViews] = useState<any | null>(null)
+  const [models, setModels] = useState<any | null>(null);
+  const [views, setViews] = useState<any | null>(null);
+  const [rawListModelsExplores, setRawListModelsExplores] = useState<
+    any | null
+  >(null);
 
-  useEffect( () => {
-    getModels(core40SDK) 
-      .then( (options:any) => {
-        setModels(options)
-        }
-      )
-      .catch((error)=> {
-        console.log(error)
+  useEffect(() => {
+    getModels(core40SDK)
+      .then((list: any) => {
+        setRawListModelsExplores(list);
+        const formattedList = list.map((item: any) => {
+          return { value: item.name, label: item.label };
+        });
+        setModels(formattedList);
       })
-  }, [])
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
 
-  const onSubmit: SubmitHandler<IFormInput> = data => {
-    console.log(data)
+  const onSubmit: SubmitHandler<IFormInput> = (data) => {
+    console.log("form data", data);
     // getdata(core40SDK);
   };
-  const handleChange = ( async (data:any) => {
-    console.log(data.value)
-    const viewOptions = await getViews(core40SDK, data.value)
-    setViews(viewOptions);
-  })
 
+  const handleChange = async (e: any, field: any) => {
+    const viewOptions = rawListModelsExplores
+      .filter((item: any) => {
+        return item.name === e.value;
+      })[0]
+      .explores.map((explore: any) => {
+        return { value: explore.name, label: explore.label };
+      });
+    setViews(viewOptions);
+    field.onChange({ value: e.value, label: e.label });
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <InputLabel >
-        First Name:
-      </InputLabel>
+      <InputLabel>First Name:</InputLabel>
       <Controller
         name="firstName"
         control={control}
         defaultValue=""
         render={({ field }) => <Input {...field} />}
       />
-      <br /><br />
-      <InputLabel>
-        Select a Model:
-      </InputLabel>
+      <br />
+      <br />
+      <InputLabel>Select a Model:</InputLabel>
       <br />
       <Controller
         name="models"
         control={control}
-        render={({ field }) => <Select 
-          {...field}
-          onChange={handleChange} 
-          options={models} 
-        />}
+        render={({ field }) => (
+          <Select
+            {...field}
+            onChange={(e) => handleChange(e, field)}
+            options={models}
+          />
+        )}
       />
-      <br /><br />
-      <InputLabel>
-        Select Dimensions:
-      </InputLabel>
+      <br />
+      <br />
+      <InputLabel>Select Dimensions:</InputLabel>
       <br />
       <Controller
-        name="dimensions"
+        name="views"
         control={control}
-        render={({ field }) => <Select 
-          {...field} 
-          options={views} 
-        />}
+        render={({ field }) => <Select {...field} options={views} />}
       />
-      <br /><br />
-      <Button variant="contained" type="submit" color="primary" >Submit</Button>
+      <br />
+      <br />
+      <Button variant="contained" type="submit" color="primary">
+        Submit
+      </Button>
     </form>
   );
 };

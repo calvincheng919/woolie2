@@ -21,7 +21,7 @@ export const getLookerData = async (request: any, core40SDK:any) => {
 }
 
 export const getModels = async (core40SDK: any) => {
-  console.log('in get model')
+  console.log("in get model");
   try {
     const result = (await core40SDK.ok(
       core40SDK.all_lookml_models({
@@ -37,25 +37,34 @@ export const getModels = async (core40SDK: any) => {
     //   return {value: item.name, label: item.label}
     // })
   } catch (error) {
-    console.log('Error getting models', error)
+    console.log("Error getting models", error);
   }
-}
-export const getViews = async (core40SDK: any, model: any) => {
-  console.log('in get views')
+};
+
+export const getUIFields = async (core40SDK: any, modelParam: any) => {
+  const model = modelParam.model;
+  const explore = modelParam.explore;
+
+  console.log("in get fields");
   try {
-    const result = await core40SDK.ok(
-      core40SDK.ok(core40SDK.lookml_model(model, 'explores'))
-    ) as unknown as any
-    console.log(result)
-    // const explores = result.explores.map( (explore: any) => explore.name) 
-    // console.log(explores)
-    // return explores.map( (item:any) => {
-    //   return {value: item, label: item}
-    // })
+    const result = (await core40SDK.ok(
+      core40SDK.lookml_model_explore(model, explore, "fields")
+    )) as unknown as Record<any, any>[];
+    console.log("result", result);
+    const dims = result.fields.dimensions.map((item: any) => ({
+      value: item.name,
+      label: item.label,
+    }));
+    const measures = result.fields.measures.map((item: any) => ({
+      value: item.name,
+      label: item.label,
+    }));
+    console.log({ dims, measures });
+    return { dims, measures };
   } catch (error) {
-    console.log('Error getting models', error)
+    console.log("Error getting models", error);
   }
-}
+};
 
 function formatResult(request:any, raw: any): any[] {
 

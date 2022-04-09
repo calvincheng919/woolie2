@@ -1,69 +1,113 @@
 import { isInteger } from "lodash"
 
-const VIEW = 'order_items'
-const MODEL = '4_mile_analytics'
+// const VIEW = 'order_items'
+// const MODEL = '4_mile_analytics'
 
-export const getLookerData = async (request: any, core40SDK:any) => {
-const lookerRequest = buildLookerQuery(request) 
-console.log('looker request: ',lookerRequest)
-try {
-  // debugger;
-  const result = await core40SDK.ok(
-    core40SDK.run_inline_query(lookerRequest)
-  ) as unknown as Record<any, any>[]
-  console.log('raw looker result: ',result)
-  const formattedResult = formatResult(request,result)
-  console.log('formatted result: ', formattedResult)
-
-  return formattedResult;
-} catch (error) {
-  console.log('Error invoking inline query', error)
+export const getLookerData = async (request: any, modelview:any, core40SDK:any) => {
+    const lookerRequest = buildLookerQuery(request, modelview) 
+    console.log('looker request: ',lookerRequest)
+    try {
+      // debugger;
+      const result = await core40SDK.ok(
+        core40SDK.run_inline_query(lookerRequest)
+      ) as unknown as Record<any, any>[]
+      console.log('raw looker result: ',result)
+      const formattedResult = formatResult(request,result)
+      console.log('formatted result: ', formattedResult)
+      return formattedResult;
+    } catch (error) {
+      console.log('Error invoking inline query', error)
+    }
 }
-}
 
+export const getModels = async (core40SDK: any) => {
+  console.log("in get model");
+  try {
+    const result = (await core40SDK.ok(
+      core40SDK.all_lookml_models({
+        fields: ["name", "has_content", "explores", "label"],
+      })
+    )) as unknown as Record<any, any>[];
+    const list = result.filter(
+      (record: any) => record.has_content && record.explores.length > 0
+    );
+    console.log("list", list);
+    return list;
+    // return list.map( (item:any) => {
+    //   return {value: item.name, label: item.label}
+    // })
+  } catch (error) {
+    console.log("Error getting models", error);
+  }
+};
+
+export const getUIFields = async (core40SDK: any, modelParam: any) => {
+  const model = modelParam.model;
+  const explore = modelParam.explore;
+
+  console.log("in get fields");
+  try {
+    const result = (await core40SDK.ok(
+      core40SDK.lookml_model_explore(model, explore, "fields")
+    )) as unknown as Record<any, any>[];
+    console.log("result", result);
+    const dims = result.fields.dimensions.map((item: any) => ({
+      value: item.name,
+      label: item.label,
+    }));
+    const measures = result.fields.measures.map((item: any) => ({
+      value: item.name,
+      label: item.label,
+    }));
+    console.log({ dims, measures });
+    return { dims, measures };
+  } catch (error) {
+    console.log("Error getting models", error);
+  }
+};
 
 function formatResult(request:any, raw: any): any[] {
 
-let formatted:any;
-let data;
-// debugger;
-console.log('raw',raw)
-if ( raw.pivots?.length > 0) {
-  // interpret looker pivot data to ag grid pivot format
-  data = dataTransform(raw)
-} else {
-  data = raw.map( (item: any) => {
-    let myObj = {}
-    Object.keys(item).map( property => {
-      Object.defineProperty(myObj, property.split('.')[1], 
-      { value: typeof item[property] === 'string'? item[property].trim(): item[property]})
+  let formatted:any;
+  let data;
+  // debugger;
+  console.log('raw',raw)
+  if ( raw.pivots?.length > 0) {
+    // interpret looker pivot data to ag grid pivot format
+    data = dataTransform(raw)
+  } else {
+    data = raw.map( (item: any) => {
+      let myObj = {}
+      Object.keys(item).map( property => {
+        Object.defineProperty(myObj, property.split('.')[1], 
+        { value: typeof item[property] === 'string'? item[property].trim(): item[property]})
+      })
+      return myObj
     })
-    return myObj
+  }
+  console.log('formatted data: ', data)
+  const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i >= raw.fields.dimensions.length): [];
+  console.log('pivot fields ',pivotFields)
+  formatted = {
+    success: true,
+    rows: data,
+    lastRow: getLastRowIndex(request, raw),
+    pivotFields 
+  }
+  formatted.rows.forEach( (record:any) => {
+    
+    pivotFields.forEach(field => {
+      if (record[field] != null  && isInteger(record[field])) {
+        record[field] = record[field].toLocaleString("en-US")
+      } else if ( record[field] && !isInteger(record[field]) ) {
+        record[field] = `${parseFloat(record[field]).toLocaleString("en-US", {style:"currency", currency:"USD"})}`
+      } else {
+        record[field] = '0'
+      }
+    })
   })
-}
-console.log('formatted data: ', data)
-const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i >= raw.fields.dimensions.length): [];
-console.log('pivot fields ',pivotFields)
-formatted = {
-  success: true,
-  rows: data,
-  lastRow: getLastRowIndex(request, raw),
-  pivotFields 
-}
-formatted.rows.forEach( (record:any) => {
-  
-  pivotFields.forEach(field => {
-    if (record[field] != null  && isInteger(record[field])) {
-      record[field] = record[field].toLocaleString("en-US")
-    } else if ( record[field] && !isInteger(record[field]) ) {
-      record[field] = `${parseFloat(record[field]).toLocaleString("en-US", {style:"currency", currency:"USD"})}`
-    } else {
-      record[field] = '0'
-    }
-  })
-})
 
-return formatted
+  return formatted
 }
 
 function dataTransform(data: any): any {
@@ -109,8 +153,8 @@ return final;
 
 //** Looker Queries */
 
-function buildLookerQuery(request: any) {
-
+function buildLookerQuery(request: any, modelview:any) {
+  console.log(modelview)
   const pivots = request.pivotCols.map( (item: any) => {
     const prefix = item.id.includes('created')? 'order_items': 'inventory_items';
     return `${prefix}.${item.id}`
@@ -119,8 +163,8 @@ function buildLookerQuery(request: any) {
   const query = {
     result_format,
     body: {
-      model: MODEL,
-      view: VIEW,
+      model: modelview.model,
+      view: modelview.view,
       pivots,
       fields: getFields(request),
       sorts: getSorting(request),

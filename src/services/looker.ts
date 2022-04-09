@@ -1,10 +1,10 @@
 import { isInteger } from "lodash"
 
-const VIEW = 'order_items'
-const MODEL = '4_mile_analytics'
+// const VIEW = 'order_items'
+// const MODEL = '4_mile_analytics'
 
-export const getLookerData = async (request: any, core40SDK:any) => {
-    const lookerRequest = buildLookerQuery(request) 
+export const getLookerData = async (request: any, modelview:any, core40SDK:any) => {
+    const lookerRequest = buildLookerQuery(request, modelview) 
     console.log('looker request: ',lookerRequest)
     try {
       // debugger;
@@ -68,46 +68,46 @@ export const getUIFields = async (core40SDK: any, modelParam: any) => {
 
 function formatResult(request:any, raw: any): any[] {
 
-let formatted:any;
-let data;
-// debugger;
-console.log('raw',raw)
-if ( raw.pivots?.length > 0) {
-  // interpret looker pivot data to ag grid pivot format
-  data = dataTransform(raw)
-} else {
-  data = raw.map( (item: any) => {
-    let myObj = {}
-    Object.keys(item).map( property => {
-      Object.defineProperty(myObj, property.split('.')[1], 
-      { value: typeof item[property] === 'string'? item[property].trim(): item[property]})
+  let formatted:any;
+  let data;
+  // debugger;
+  console.log('raw',raw)
+  if ( raw.pivots?.length > 0) {
+    // interpret looker pivot data to ag grid pivot format
+    data = dataTransform(raw)
+  } else {
+    data = raw.map( (item: any) => {
+      let myObj = {}
+      Object.keys(item).map( property => {
+        Object.defineProperty(myObj, property.split('.')[1], 
+        { value: typeof item[property] === 'string'? item[property].trim(): item[property]})
+      })
+      return myObj
     })
-    return myObj
+  }
+  console.log('formatted data: ', data)
+  const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i >= raw.fields.dimensions.length): [];
+  console.log('pivot fields ',pivotFields)
+  formatted = {
+    success: true,
+    rows: data,
+    lastRow: getLastRowIndex(request, raw),
+    pivotFields 
+  }
+  formatted.rows.forEach( (record:any) => {
+    
+    pivotFields.forEach(field => {
+      if (record[field] != null  && isInteger(record[field])) {
+        record[field] = record[field].toLocaleString("en-US")
+      } else if ( record[field] && !isInteger(record[field]) ) {
+        record[field] = `${parseFloat(record[field]).toLocaleString("en-US", {style:"currency", currency:"USD"})}`
+      } else {
+        record[field] = '0'
+      }
+    })
   })
-}
-console.log('formatted data: ', data)
-const pivotFields = raw.pivots? Object.keys(data[0]).filter( (key, i) => i >= raw.fields.dimensions.length): [];
-console.log('pivot fields ',pivotFields)
-formatted = {
-  success: true,
-  rows: data,
-  lastRow: getLastRowIndex(request, raw),
-  pivotFields 
-}
-formatted.rows.forEach( (record:any) => {
-  
-  pivotFields.forEach(field => {
-    if (record[field] != null  && isInteger(record[field])) {
-      record[field] = record[field].toLocaleString("en-US")
-    } else if ( record[field] && !isInteger(record[field]) ) {
-      record[field] = `${parseFloat(record[field]).toLocaleString("en-US", {style:"currency", currency:"USD"})}`
-    } else {
-      record[field] = '0'
-    }
-  })
-})
 
-return formatted
+  return formatted
 }
 
 function dataTransform(data: any): any {
@@ -153,8 +153,8 @@ return final;
 
 //** Looker Queries */
 
-function buildLookerQuery(request: any) {
-
+function buildLookerQuery(request: any, modelview:any) {
+  console.log(modelview)
   const pivots = request.pivotCols.map( (item: any) => {
     const prefix = item.id.includes('created')? 'order_items': 'inventory_items';
     return `${prefix}.${item.id}`
@@ -163,8 +163,8 @@ function buildLookerQuery(request: any) {
   const query = {
     result_format,
     body: {
-      model: MODEL,
-      view: VIEW,
+      model: modelview.model,
+      view: modelview.view,
       pivots,
       fields: getFields(request),
       sorts: getSorting(request),

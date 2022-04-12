@@ -9,16 +9,18 @@ import InputLabel from "@material-ui/core/InputLabel";
 import Button from "@material-ui/core/Button";
 import { getModels, getUIFields } from "../services/looker";
 import AnimatedMulti from "./multiselect";
+import EmptyTable from './emptytable';
 import makeAnimated from "react-select/animated";
 import {
   IFormInput,
   IGridProps,
   IinlineQueryResult,
 } from "../types/IProjectTypes";
+import './pivot_create.css'
 
 const Pivotcreator = () => {
   const core40SDK = getCoreSDK2<Looker40SDK>();
-  const { control, handleSubmit } = useForm<IFormInput>();
+  const { control, handleSubmit, getValues, setValue } = useForm<IFormInput>();
   const [models, setModels] = useState<any | null>(null);
   const [views, setViews] = useState<any | null>(null);
   const [rawListModelsExplores, setRawListModelsExplores] = useState<
@@ -47,8 +49,10 @@ const Pivotcreator = () => {
 
   const onSubmit: SubmitHandler<IFormInput> = (data: any) => {
     let gridColsConfig: any = []
-    console.log(data)
-
+    console.log('my getvalues',getValues())
+    setValue("models", {"value": "testvalue", label:"testLabel"})
+    console.log('after setvalue', getValues())
+    setValue("dimensions",  {"0": { label: "dimLabel", value: "dimValue"} })
     data.dimensions?.forEach( (dim:any) => {
       const arr = data.pivots
       for( var i = 0; i < arr.length; i++){ 
@@ -58,7 +62,7 @@ const Pivotcreator = () => {
       }
     })
     data.measures.forEach( (meas:any) => gridColsConfig.push({headerName:meas.label, field: meas.value.substring(meas.value.indexOf('.')+1).replace(/_/g, '-'), aggFunc: 'sum', minWidth: 220 })); 
-    data.pivots?.forEach( (piv:any) => gridColsConfig.push({headerName:piv.label, field: piv.value.substring(piv.value.indexOf('.')+1), minWidth: 220, pivot: true})); 
+    data.pivots?.forEach( (piv:any) => gridColsConfig.push({headerName:piv.label, field: piv.value.substring(piv.value.indexOf('.')+1), columnGroupShow: 'closed',minWidth: 220, pivot: true})); 
     setSelectedModel(data.models.value);
     setSelectedExplore(data.views.value);
     setColConfig(gridColsConfig);
@@ -95,44 +99,45 @@ const Pivotcreator = () => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <InputLabel>Select a Model:</InputLabel>
-        <br />
-        <Controller
-          name="models"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              onChange={(e) => handleChange(e, field)}
-              options={models}
+
+        <section className="top">
+          <div>
+            <InputLabel className="labelPos">Model</InputLabel>
+            <Controller
+              name="models"
+              control={control}
+              render={({ field }) => (
+                <Select className="dropdown"
+                  {...field}
+                  onChange={(e) => handleChange(e, field)}
+                  options={models}
+                />
+              )}
             />
-          )}
-        />
-        <br />
-        <br />
-        <InputLabel>Select Explore (View):</InputLabel>
-        <br />
-        <Controller
-          name="views"
-          control={control}
-          render={({ field }) => (
-            <Select
-              {...field}
-              onChange={(e) => handleChange(e, field)}
-              options={views}
+          </div>
+          <div>
+            <InputLabel className="labelPos">Explore (View)</InputLabel>
+            <Controller
+              name="views"
+              control={control}
+              render={({ field }) => (
+                <Select className="dropdown"
+                  {...field}
+                  onChange={(e) => handleChange(e, field)}
+                  options={views}
+                />
+              )}
             />
-          )}
-        />
-        <br />
-        <br />
-        <div>
-          <InputLabel>Select Dimensions:</InputLabel>
-          <br />
+          </div>
+        </section>
+        <section className="mid">
+          <div>
+          <InputLabel className="labelPos">Dimensions</InputLabel>
           <Controller
             name="dimensions"
             control={control}
             render={({ field }) => (
-              <Select
+              <Select className="dropdown"
                 {...field}
                 closeMenuOnSelect={false}
                 components={animatedComponents}
@@ -142,14 +147,14 @@ const Pivotcreator = () => {
               />
             )}
           />
-
-          <InputLabel>Select Measures:</InputLabel>
-          <br />
+          </div>
+          <div>
+          <InputLabel className="labelPos">Measures</InputLabel>
           <Controller
             name="measures"
             control={control}
             render={({ field }) => (
-              <Select
+              <Select className="dropdown"
                 {...field}
                 closeMenuOnSelect={false}
                 components={animatedComponents}
@@ -158,14 +163,15 @@ const Pivotcreator = () => {
                 options={measures}
               />
             )}
-          />
-          <InputLabel>Pivot on Dimensions:</InputLabel>
-          <br />
+          />  
+          </div>
+          <div>
+          <InputLabel className="labelPos">Pivots</InputLabel>
           <Controller
             name="pivots"
             control={control}
             render={({ field }) => (
-              <Select
+              <Select className="dropdown"
                 {...field}
                 closeMenuOnSelect={false}
                 components={animatedComponents}
@@ -175,14 +181,17 @@ const Pivotcreator = () => {
               />
             )}
           />
-        </div>
+          </div>
+        </section>
+        <section className="bottom">
         <Button variant="contained" type="submit" color="primary">
           Submit
         </Button>
+        </section>
       </form>
       {selectedModel && selectedExplore && colConfig
         ? <AGGrid colConfig = {colConfig} model={selectedModel} view={selectedExplore}/>
-        : <div><h1>Grid PlaceHolder</h1></div>
+        : <div>< EmptyTable /></div>
       }
     </>
   );

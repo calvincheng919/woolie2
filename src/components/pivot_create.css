@@ -1,0 +1,44 @@
+ /* * {
+   outline: 1px solid;
+ } */
+
+form {
+  display: flex;
+  width: 750px;
+  flex-direction: column;
+}
+
+.top {
+  background-color: lightgray;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+  height: 50px;
+  padding: 20px;
+  border-radius: 5px; 
+
+}
+
+.mid {
+  background-color: lightgray;
+  display: flex;
+  justify-content: space-between;
+  height: 125px;
+  margin-bottom: 10px;
+  padding: 15px; 
+  border-radius: 5px;
+}
+.bottom {
+
+
+}
+
+.labelPos {
+margin-left: 15px;
+margin-bottom: 5px;
+}
+
+.dropdown {
+  width: 200px;
+  margin-left: 10px
+}
